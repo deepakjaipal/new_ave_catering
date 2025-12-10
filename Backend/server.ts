@@ -64,6 +64,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://ave-catering.vercel.app",
   "https://ave-catering1.vercel.app",
+  "https://ave-rg2r.onrender.com/",
   process.env.FRONTEND_URL,
 ].filter(Boolean); 
 app.use(cors({
