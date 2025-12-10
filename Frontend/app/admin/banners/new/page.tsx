@@ -11,19 +11,20 @@ import { createBanner } from '@/lib/api/services/bannerService';
 
 export default function NewBannerPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    title: '',
-    subtitle: '',
-    description: '',
-    image: '',
-    badge: '',
-    link: '',
-    buttonText: '',
-    order: '0',
-    isActive: true,
-    startDate: '',
-    endDate: '',
-  });
+ const [formData, setFormData] = useState({
+  title: '',
+  subtitle: '',
+  description: '',
+  image: '' as File | string,
+  badge: '',
+  link: '',
+  buttonText: '',
+  order: '0',
+  isActive: true,
+  startDate: '',
+  endDate: '',
+});
+
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -61,23 +62,30 @@ export default function NewBannerPage() {
 
     let imageUrl = "";
 
-    // ⬆️ If image is a File, upload to Cloudinary
-    if (formData.image instanceof File) {
-      const data = new FormData();
-      data.append("file", formData.image);
-      data.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
-      data.append("cloud_name", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!); 
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: "POST",
-        body: data,
-      });
+const isFile =
+  formData.image &&
+  typeof formData.image === "object" &&
+  "name" in formData.image;
 
-      const uploaded = await res.json();
-      imageUrl = uploaded.secure_url; // 🔥 final Cloudinary URL
-    } else {
-      imageUrl = formData.image; // fallback (if URL string)
-    }
+if (isFile) {
+  const data = new FormData();
+  data.append("file", formData.image as File);
+  data.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+  data.append("cloud_name", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!);
+
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: data,
+  });
+
+  const uploaded = await res.json();
+  imageUrl = uploaded.secure_url;
+} else {
+  imageUrl = formData.image as string;
+}
+
 
     // ⬇️ Send to your backend
     await createBanner({
