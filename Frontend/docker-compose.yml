@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      : ${NEXT_PUBLIC_API_URL:-https://new-ave-catering.vercel.app}
+      : ${NEXT_PUBLIC_API_URL:-https://ave-rg2r.onrender.com/}
     ports:
       - "3000:3000"
     networks:
