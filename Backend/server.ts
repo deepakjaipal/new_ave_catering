@@ -44,18 +44,8 @@ const allowedOrigins: string[] = [
 // ======================================================
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // Allow Postman
-
-      // Match allowed origins partially (ignore www)
-      if (allowedOrigins.some(o => origin.includes(o))) {
-        return callback(null, true);
-      }
-
-      console.log("❌ CORS blocked:", origin);
-      return callback(new Error("Not allowed by CORS"), false);
-    },
-     credentials: true,
+    origin: "*", // Allow all origins
+    credentials: false, // Must be false when origin is "*"
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
