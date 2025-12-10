@@ -223,8 +223,11 @@ if (isFile) {
         type="file"
         accept="image/*"
         onChange={(e) =>
-          setFormData({ ...formData, image: e.target.files?.[0] })
-        }
+  setFormData({
+    ...formData,
+    image: e.target.files?.[0] ?? formData.image,
+  })
+}
         className={`block w-full text-sm border p-2 rounded ${
           errors.image ? "border-red-500" : ""
         }`}
