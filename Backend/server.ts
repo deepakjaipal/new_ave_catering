@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import cloudinary from "./config/cloudinary.js";
 
@@ -25,33 +25,34 @@ import logger from "./utils/logger.js";
 const app = express();
 
 
-// ===============================================
-// ✅ CORS Allowed Origins
-// ===============================================
-const allowedOrigins = [
+// ======================================================
+// ✅ Correct Allowed Origins
+// ======================================================
+const allowedOrigins: string[] = [
   "http://localhost:3000",
+  "http://127.0.0.1:3000",
   "http://localhost:5173",
   "https://ave-catering.vercel.app",
   "https://ave-catering1.vercel.app",
-  "https://new-ave-catering.vercel.app",   // IMPORTANT — Must be added
-  process.env.FRONTEND_URL,
+  "https://new-ave-catering.vercel.app",
+  process.env.FRONTEND_URL || "",
 ].filter(Boolean);
 
 
-// ===============================================
-// ✅ CORS Middleware (Fully Correct!)
-// ===============================================
+// ======================================================
+// ✅ Correct CORS Middleware
+// ======================================================
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // Allow Postman or curl
+      if (!origin) return callback(null, true); // Allow mobile apps/Postman
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
       console.log("❌ CORS blocked:", origin);
-      return callback(null, false); // Don't throw 500 error
+      return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -60,30 +61,30 @@ app.use(
 );
 
 
-// ===============================================
+// ======================================================
 // Body Parsing
-// ===============================================
+// ======================================================
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 
-// ===============================================
+// ======================================================
 // Database
-// ===============================================
+// ======================================================
 connectDB();
 
 
-// ===============================================
+// ======================================================
 // Cloudinary Setup
-// ===============================================
+// ======================================================
 if (
   !process.env.CLOUDINARY_CLOUD_NAME ||
   !process.env.CLOUDINARY_API_KEY ||
   !process.env.CLOUDINARY_API_SECRET
 ) {
-  console.error("❌ Cloudinary environment variables are missing!");
+  console.error("❌ Cloudinary env missing!");
 } else {
-  console.log("✅ Cloudinary ENV loaded successfully");
+  console.log("✅ Cloudinary ENV loaded");
 }
 
 cloudinary.config({
@@ -92,13 +93,11 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-console.log("Cloudinary Loaded:", process.env.CLOUDINARY_CLOUD_NAME);
 
-
-// ===============================================
+// ======================================================
 // Health Check
-// ===============================================
-app.get("/health", (req, res) => {
+// ======================================================
+app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({
     status: "OK",
     timestamp: new Date().toISOString(),
@@ -108,9 +107,9 @@ app.get("/health", (req, res) => {
 });
 
 
-// ===============================================
+// ======================================================
 // API Routes
-// ===============================================
+// ======================================================
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/orders", orderRoutes);
@@ -125,29 +124,29 @@ app.use("/api/import", importRoutes);
 app.use("/api/banners", bannerRoutes);
 
 
-// ===============================================
-// Error Handlers
-// ===============================================
+// ======================================================
+// Error Middleware
+// ======================================================
 app.use(notFound);
 app.use(errorHandler);
 
 
-// ===============================================
-// Start Server
-// ===============================================
+// ======================================================
+// Server Start
+// ======================================================
 const PORT = parseInt(process.env.PORT || "5001");
 
 const server = app.listen(PORT, "0.0.0.0", () => {
-  logger.info(`🚀 Server running in ${process.env.NODE_ENV} on port ${PORT}`);
-  logger.info(`📊 Health check → http://localhost:${PORT}/health`);
+  logger.info(`🚀 Server running on port ${PORT}`);
+  logger.info(`📊 Health check → /health`);
 });
 
 
-// ===============================================
+// ======================================================
 // Graceful Shutdown
-// ===============================================
-const gracefulShutdown = (signal) => {
-  logger.info(`${signal} received, shutting down gracefully`);
+// ======================================================
+const gracefulShutdown = (signal: string) => {
+  logger.info(`${signal} received. Shutting down...`);
   server.close(() => {
     logger.info("Process terminated");
     process.exit(0);
@@ -157,6 +156,4 @@ const gracefulShutdown = (signal) => {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-
 export default app;
-// ===============================================
