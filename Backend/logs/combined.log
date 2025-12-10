@@ -514,3 +514,6 @@
 {"level":"info","message":"🚀 Server running in development mode on port 5000","service":"wholesale-market-api","timestamp":"2025-12-10 11:19:03"}
 {"level":"info","message":"📊 Health check available at http://localhost:5000/health","service":"wholesale-market-api","timestamp":"2025-12-10 11:19:03"}
 {"level":"info","message":"SIGINT received, shutting down gracefully","service":"wholesale-market-api","timestamp":"2025-12-10 12:37:37"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"wholesale-market-api","timestamp":"2025-12-10 21:56:42"}
+{"level":"info","message":"📊 Health check → /health","service":"wholesale-market-api","timestamp":"2025-12-10 21:56:42"}
+{"level":"info","message":"SIGINT received. Shutting down...","service":"wholesale-market-api","timestamp":"2025-12-10 22:56:59"}

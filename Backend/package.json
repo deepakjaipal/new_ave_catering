@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node Backend/dist/server.js",
     "dev": "nodemon --exec \"tsx server.ts\"",
-    "build": "tsc",
+    "build": "node --max-old-space-size=2048 ./node_modules/.bin/tsc",
     "postbuild": "powershell Copy-Item package.json dist/",
     "lint": "eslint . --ext .ts",
     "type-check": "tsc --noEmit",
