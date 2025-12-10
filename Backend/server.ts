@@ -1,19 +1,13 @@
 import dotenv from "dotenv";
-
 dotenv.config();
 
 import express from "express";
 import cors from "cors";
-
-// import helmet from "helmet";
-// import compression from "compression";
-// import rateLimit from "express-rate-limit";
-// import morgan from "morgan";
-import cloudinary from "./config/cloudinary.js"
-
+import cloudinary from "./config/cloudinary.js";
 
 import connectDB from "./config/db.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
+
 import productRoutes from "./routes/productRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
@@ -28,52 +22,60 @@ import importRoutes from "./routes/importRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
 import logger from "./utils/logger.js";
 
-
 const app = express();
 
 
-// Security middleware
-// app.use(
-//   helmet({
-//     contentSecurityPolicy: {
-//       directives: {
-//         defaultSrc: ["'self'"],
-//         styleSrc: ["'self'", "'unsafe-inline'"],
-//         scriptSrc: ["'self'"],
-//         imgSrc: ["'self'", "data:", "https:"],
-//       },
-//     },
-//     crossOriginEmbedderPolicy: false,
-//   })
-// );
-
-// Rate limiting
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100, // limit each IP to 100 requests per windowMs
-//   message: "Too many requests from this IP, please try again later.",
-//   standardHeaders: true,
-//   legacyHeaders: false,
-// });
-// app.use(limiter);
-
-// CORS configuration - Allow multiple origins
+// ===============================================
+// ✅ CORS Allowed Origins
+// ===============================================
 const allowedOrigins = [
   "http://localhost:3000",
-  "http://127.0.0.1:3000",
   "http://localhost:5173",
   "https://ave-catering.vercel.app",
   "https://ave-catering1.vercel.app",
-  "https://ave-rg2r.onrender.com/",
+  "https://new-ave-catering.vercel.app",   // IMPORTANT — Must be added
   process.env.FRONTEND_URL,
-].filter(Boolean); 
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+].filter(Boolean);
 
 
-// Check if environment variables are set
+// ===============================================
+// ✅ CORS Middleware (Fully Correct!)
+// ===============================================
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // Allow Postman or curl
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.log("❌ CORS blocked:", origin);
+      return callback(null, false); // Don't throw 500 error
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+
+// ===============================================
+// Body Parsing
+// ===============================================
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+
+// ===============================================
+// Database
+// ===============================================
+connectDB();
+
+
+// ===============================================
+// Cloudinary Setup
+// ===============================================
 if (
   !process.env.CLOUDINARY_CLOUD_NAME ||
   !process.env.CLOUDINARY_API_KEY ||
@@ -84,8 +86,6 @@ if (
   console.log("✅ Cloudinary ENV loaded successfully");
 }
 
-
-// ✅ If all env variables exist, configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -95,29 +95,9 @@ cloudinary.config({
 console.log("Cloudinary Loaded:", process.env.CLOUDINARY_CLOUD_NAME);
 
 
-
-
-
-
-
-// Compression
-// app.use(compression());
-
-// Logging
-// app.use(
-//   morgan("combined", {
-//     stream: { write: (message) => logger.info(message.trim()) },
-//   })
-// );
-
-
-
-// Body parsing
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-// Connect to database
-connectDB();
-// Health check endpoint
+// ===============================================
+// Health Check
+// ===============================================
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
@@ -127,7 +107,10 @@ app.get("/health", (req, res) => {
   });
 });
 
-// API routes
+
+// ===============================================
+// API Routes
+// ===============================================
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/orders", orderRoutes);
@@ -141,23 +124,29 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/import", importRoutes);
 app.use("/api/banners", bannerRoutes);
 
-// Error handling middleware
+
+// ===============================================
+// Error Handlers
+// ===============================================
 app.use(notFound);
 app.use(errorHandler);
 
+
+// ===============================================
+// Start Server
+// ===============================================
 const PORT = parseInt(process.env.PORT || "5001");
 
-// Start server
 const server = app.listen(PORT, "0.0.0.0", () => {
-
-  logger.info(
-    `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
-  );
-  logger.info(`📊 Health check available at http://localhost:${PORT}/health`);
+  logger.info(`🚀 Server running in ${process.env.NODE_ENV} on port ${PORT}`);
+  logger.info(`📊 Health check → http://localhost:${PORT}/health`);
 });
 
-// Graceful shutdown handler
-const gracefulShutdown = (signal: string) => {
+
+// ===============================================
+// Graceful Shutdown
+// ===============================================
+const gracefulShutdown = (signal) => {
   logger.info(`${signal} received, shutting down gracefully`);
   server.close(() => {
     logger.info("Process terminated");
@@ -168,50 +157,6 @@ const gracefulShutdown = (signal: string) => {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
+
 export default app;
-
-// import express from "express";
-// import cors from "cors";
-// import dotenv from "dotenv";
-// import connectDB from "./config/db.js";
-
-// import productRoutes from "./routes/productRoutes.js";
-// import userRoutes from "./routes/userRoutes.js";
-// import orderRoutes from "./routes/orderRoutes.js";
-// import categoryRoutes from "./routes/categoryRoutes.js";
-// import subcategoryRoutes from "./routes/subcategoryRoutes.js";
-// import subSubcategoryRoutes from "./routes/subSubcategoryRoutes.js";
-// import uploadRoutes from "./routes/uploadRoutes.js";
-// import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
-
-// dotenv.config();
-// const app = express();
-
-// // Middleware
-// app.use(cors());
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
-
-// // Connect to MongoDB
-// connectDB();
-
-// // Routes
-// app.use("/api/products", productRoutes);
-// app.use("/api/users", userRoutes);
-// app.use("/api/orders", orderRoutes);
-// app.use("/api/categories", categoryRoutes);
-// app.use("/api/subcategories", subcategoryRoutes);
-// app.use("/api/subsubcategories", subSubcategoryRoutes);
-// app.use("/api/upload", uploadRoutes);
-
-// // Error Handling
-// app.use(notFound);
-// app.use(errorHandler);
-
-// // Start Server
-// const PORT = process.env.PORT || 5000;
-// app.listen(PORT, () => {
-//   console.log(`🚀 Server running on port ${PORT}`);
-// });
-
-// export default app;
+// ===============================================
