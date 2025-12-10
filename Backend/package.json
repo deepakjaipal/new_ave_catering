@@ -2,9 +2,9 @@
   "name": "wholesale-market-server",
   "version": "1.0.0",
   "description": "Wholesale Market Backend API - Express.js Server",
-  "main": "Backend/dist/server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "node Backend/dist/server.js",
     "dev": "nodemon --exec \"tsx server.ts\"",
     "build": "tsc",
     "postbuild": "powershell Copy-Item package.json dist/",
