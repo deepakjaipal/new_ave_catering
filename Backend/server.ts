@@ -45,20 +45,29 @@ const allowedOrigins: string[] = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // Allow mobile apps/Postman
+      if (!origin) return callback(null, true); // Allow Postman
 
-      if (allowedOrigins.includes(origin)) {
+      // Match allowed origins partially (ignore www)
+      if (allowedOrigins.some(o => origin.includes(o))) {
         return callback(null, true);
       }
 
       console.log("❌ CORS blocked:", origin);
-      return callback(null, false);
+      return callback(new Error("Not allowed by CORS"), false);
     },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+    ],
+    exposedHeaders: ["Content-Range", "X-Content-Range"],
   })
 );
+
 
 
 // ======================================================
