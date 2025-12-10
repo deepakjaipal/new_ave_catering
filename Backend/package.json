@@ -2,7 +2,7 @@
   "name": "wholesale-market-server",
   "version": "1.0.0",
   "description": "Wholesale Market Backend API - Express.js Server",
-  "main": "dist/server.js",
+  "main": "Backend/dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon --exec \"tsx server.ts\"",
