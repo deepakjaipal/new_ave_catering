@@ -11,20 +11,19 @@ import { createBanner } from '@/lib/api/services/bannerService';
 
 export default function NewBannerPage() {
   const router = useRouter();
- const [formData, setFormData] = useState({
-  title: '',
-  subtitle: '',
-  description: '',
-  image: '' as File | string,
-  badge: '',
-  link: '',
-  buttonText: '',
-  order: '0',
-  isActive: true,
-  startDate: '',
-  endDate: '',
-});
-
+  const [formData, setFormData] = useState({
+    title: '',
+    subtitle: '',
+    description: '',
+    image: '' as string | File,
+    badge: '',
+    link: '',
+    buttonText: '',
+    order: '0',
+    isActive: true,
+    startDate: '',
+    endDate: '',
+  });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -57,60 +56,64 @@ export default function NewBannerPage() {
 
     if (!validate()) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    let imageUrl = "";
+      let imageUrl = "";
 
-const isFile =
-  formData.image &&
-  typeof formData.image === "object" &&
-  "name" in formData.image;
+      // ⬆️ If image is a File, upload to Cloudinary
+      if (formData.image instanceof File) {
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-if (isFile) {
-  const data = new FormData();
-  data.append("file", formData.image as File);
-  data.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
-  data.append("cloud_name", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!);
+        if (!cloudName || !uploadPreset) {
+          throw new Error("Missing Cloudinary environment variables");
+        }
 
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        const data = new FormData();
+        data.append("file", formData.image);
+        data.append("upload_preset", uploadPreset);
 
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: "POST",
-    body: data,
-  });
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: "POST",
+          body: data,
+        });
 
-  const uploaded = await res.json();
-  imageUrl = uploaded.secure_url;
-} else {
-  imageUrl = formData.image as string;
-}
+        const uploaded = await res.json();
 
+        if (!res.ok) {
+          throw new Error(uploaded.error?.message || "Cloudinary upload failed");
+        }
 
-    // ⬇️ Send to your backend
-    await createBanner({
-      title: formData.title,
-      subtitle: formData.subtitle || undefined,
-      description: formData.description || undefined,
-      image: imageUrl, // ✔ Cloudinary URL saved
-      badge: formData.badge || undefined,
-      link: formData.link || undefined,
-      buttonText: formData.buttonText || undefined,
-      order: parseInt(formData.order) || 0,
-      isActive: formData.isActive,
-      startDate: formData.startDate || undefined,
-      endDate: formData.endDate || undefined,
-    });
+        imageUrl = uploaded.secure_url;
+      } else {
+        imageUrl = formData.image;
+      }
 
-    alert("Banner created successfully!");
-    router.push("/admin/banners");
+      // ⬇️ Send to your backend
+      await createBanner({
+        title: formData.title,
+        subtitle: formData.subtitle || undefined,
+        description: formData.description || undefined,
+        image: imageUrl,
+        badge: formData.badge || undefined,
+        link: formData.link || undefined,
+        buttonText: formData.buttonText || undefined,
+        order: parseInt(formData.order) || 0,
+        isActive: formData.isActive,
+        startDate: formData.startDate || undefined,
+        endDate: formData.endDate || undefined,
+      });
 
-  } catch (error) {
-    console.error("Error creating banner:", error);
-    alert("Error creating banner. Please try again.");
-  } finally {
-    setLoading(false);
-  }
+      alert("Banner created successfully!");
+      router.push("/admin/banners");
+
+    } catch (error) {
+      console.error("Error creating banner:", error);
+      alert(`Error: ${error instanceof Error ? error.message : "Failed to create banner"}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -222,12 +225,12 @@ if (isFile) {
       <input
         type="file"
         accept="image/*"
-        onChange={(e) =>
-  setFormData({
-    ...formData,
-    image: e.target.files?.[0] ?? formData.image,
-  })
-}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            setFormData({ ...formData, image: file });
+          }
+        }}
         className={`block w-full text-sm border p-2 rounded ${
           errors.image ? "border-red-500" : ""
         }`}
